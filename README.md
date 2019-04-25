@@ -1,4 +1,4 @@
-## To Do: Create a deployment script, using ruby, to generate a json template that contails the below:
+## To Do: Create a deployment script, using ruby, to generate a json template that contains the below:
 
 1. A VPC with three subnets. The VPC should have an IP-range of /16, the subnets /20.
 2. A security group for the VPC. 
@@ -34,7 +34,7 @@ As the requirement is pretty straight forward in the assignment, so I have not t
 
 ## Output:
 
-The output after executing the Ruby file will be a JSON file. I have uploaded Outcome.json in this github Repositry which is generated after the execution of Rubu script. 
+The output after executing the Ruby file will be a JSON file. I have uploaded Outcome.json in this github Repositry which is generated after the execution of Ruby script. 
 
 
 
