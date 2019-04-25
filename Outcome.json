@@ -1,0 +1,311 @@
+{
+	"AWSTemplateFormatVersion": "2010-09-09",
+	"Description": "Creates an AWS VPC with a 3 subnets - 1 Public and 2 Private subnets.",
+	"Parameters": {
+		"Environment": {
+			"Type": "String",
+			"Default": "Dev",
+			"AllowedValues": ["Dev", "Test"]
+		},
+		"vpcName": {
+			"Type": "String",
+			"Default": "Custom"
+		},
+		"keyPairName": {
+			"Type": "String",
+			"Default": "demo"
+		}
+	},
+	"Mappings": {
+		"Dev": {
+			"InstanceMap": {
+				"AmiId": "ami-08935252a36e25f85",
+				"InstanceType": "t3.micro"
+			}
+		}
+	},
+	"Resources": {
+		"DemoVPC": {
+			"Properties": {
+				"EnableDnsSupport": true,
+				"EnableDnsHostnames": true,
+				"CidrBlock": "10.0.0.0/16",
+				"Tags": [{
+					"Key": "Name",
+					"Value": {
+						"Ref": "vpcName"
+					}
+				}]
+			},
+			"Type": "AWS::EC2::VPC"
+		},
+		"DemoInternetGateway": {
+			"Properties": {
+				"Tags": [{
+					"Key": "Name",
+					"Value": "Demo VPC Gateway"
+				}]
+			},
+			"Type": "AWS::EC2::InternetGateway"
+		},
+		"DemoEIP": {
+			"Properties": {
+				"Domain": "vpc"
+			},
+			"Type": "AWS::EC2::EIP"
+		},
+		"GatewayToInternet": {
+			"Properties": {
+				"VpcId": {
+					"Ref": "DemoVPC"
+				},
+				"InternetGatewayId": {
+					"Ref": "DemoInternetGateway"
+				}
+			},
+			"Type": "AWS::EC2::VPCGatewayAttachment"
+		},
+		"pubsubnet1": {
+			"Properties": {
+				"VpcId": {
+					"Ref": "DemoVPC"
+				},
+				"CidrBlock": "10.0.16.0/20",
+				"Tags": [{
+					"Key": "Name",
+					"Value": "Demo vpc pubsubnet1"
+				}]
+			},
+			"Type": "AWS::EC2::Subnet"
+		},
+		"pubsubnet1RouteTable": {
+			"Properties": {
+				"VpcId": {
+					"Ref": "DemoVPC"
+				},
+				"Tags": [{
+					"Key": "Name",
+					"Value": "pubsubnet1RouteTable"
+				}]
+			},
+			"Type": "AWS::EC2::RouteTable"
+		},
+		"pubsubnet1RouteTableAssoc": {
+			"Properties": {
+				"SubnetId": {
+					"Ref": "pubsubnet1"
+				},
+				"RouteTableId": {
+					"Ref": "pubsubnet1RouteTable"
+				}
+			},
+			"Type": "AWS::EC2::SubnetRouteTableAssociation"
+		},
+		"pubsubnet1GatewayRoute": {
+			"DependsOn": "GatewayToInternet",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "pubsubnet1RouteTable"
+				},
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"GatewayId": {
+					"Ref": "DemoInternetGateway"
+				}
+			},
+			"Type": "AWS::EC2::Route"
+		},
+		"DemoNATGateway": {
+			"Properties": {
+				"AllocationId": {
+					"Fn::GetAtt": ["DemoEIP", "AllocationId"]
+				},
+				"SubnetId": {
+					"Ref": "pubsubnet1"
+				}
+			},
+			"Type": "AWS::EC2::NatGateway"
+		},
+		"prvsubnet2": {
+			"Properties": {
+				"VpcId": {
+					"Ref": "DemoVPC"
+				},
+				"CidrBlock": "10.0.32.0/20",
+				"Tags": [{
+					"Key": "Name",
+					"Value": "Demo vpc prvsubnet2"
+				}]
+			},
+			"Type": "AWS::EC2::Subnet"
+		},
+		"prvsubnet2RouteTable": {
+			"Properties": {
+				"VpcId": {
+					"Ref": "DemoVPC"
+				},
+				"Tags": [{
+					"Key": "Name",
+					"Value": "prvsubnet2RouteTable"
+				}]
+			},
+			"Type": "AWS::EC2::RouteTable"
+		},
+		"prvsubnet2RouteTableAssoc": {
+			"Properties": {
+				"SubnetId": {
+					"Ref": "prvsubnet2"
+				},
+				"RouteTableId": {
+					"Ref": "prvsubnet2RouteTable"
+				}
+			},
+			"Type": "AWS::EC2::SubnetRouteTableAssociation"
+		},
+		"prvsubnet2GatewayRoute": {
+			"DependsOn": "DemoNATGateway",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "prvsubnet2RouteTable"
+				},
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"NatGatewayId": {
+					"Ref": "DemoNATGateway"
+				}
+			},
+			"Type": "AWS::EC2::Route"
+		},
+		"prvsubnet3": {
+			"Properties": {
+				"VpcId": {
+					"Ref": "DemoVPC"
+				},
+				"CidrBlock": "10.0.48.0/20",
+				"Tags": [{
+					"Key": "Name",
+					"Value": "Demo vpc prvsubnet3"
+				}]
+			},
+			"Type": "AWS::EC2::Subnet"
+		},
+		"prvsubnet3RouteTable": {
+			"Properties": {
+				"VpcId": {
+					"Ref": "DemoVPC"
+				},
+				"Tags": [{
+					"Key": "Name",
+					"Value": "prvsubnet3RouteTable"
+				}]
+			},
+			"Type": "AWS::EC2::RouteTable"
+		},
+		"prvsubnet3RouteTableAssoc": {
+			"Properties": {
+				"SubnetId": {
+					"Ref": "prvsubnet3"
+				},
+				"RouteTableId": {
+					"Ref": "prvsubnet3RouteTable"
+				}
+			},
+			"Type": "AWS::EC2::SubnetRouteTableAssociation"
+		},
+		"prvsubnet3GatewayRoute": {
+			"DependsOn": "DemoNATGateway",
+			"Properties": {
+				"RouteTableId": {
+					"Ref": "prvsubnet3RouteTable"
+				},
+				"DestinationCidrBlock": "0.0.0.0/0",
+				"NatGatewayId": {
+					"Ref": "DemoNATGateway"
+				}
+			},
+			"Type": "AWS::EC2::Route"
+		},
+		"vpcSecurityGroup": {
+			"Type": "AWS::EC2::SecurityGroup",
+			"Properties": {
+				"VpcId": {
+					"Ref": "DemoVPC"
+				},
+				"GroupDescription": "Allow required traffic",
+				"SecurityGroupIngress": [{
+					"IpProtocol": "tcp",
+					"FromPort": 22,
+					"ToPort": 22,
+					"CidrIp": "35.158.238.101/32"
+				}]
+			}
+		},
+		"DemoInstance": {
+			"Properties": {
+				"ImageId": {
+					"Fn::FindInMap": ["Dev", "InstanceMap", "AmiId"]
+				},
+				"SecurityGroupIds": [{
+					"Ref": "vpcSecurityGroup"
+				}],
+				"KeyName": {
+					"Ref": "keyPairName"
+				},
+				"SubnetId": {
+					"Ref": "pubsubnet1"
+				},
+				"Volumes": [{
+					"Device": "/dev/sdf",
+					"VolumeId": {
+						"Ref": "NewVolume"
+					}
+				}],
+				"UserData": {
+					"Fn::Base64": {
+						"Fn::Join": ["", ["#!/bin/bash -xe\n", "yum update -y\n", "# create mount point directory\n", "mkdir /mnt/app\n", "while [ ! -e /dev/xvdf ]; doecho waiting for /dev/xvdf to attach; sleep 10; done\n", "# create ext4 filesystem on new volume\n", "mkfs -t ext4 /dev/xvdf\n", "# add an entry to fstab to mount volume during boot\n", "echo \"/dev/xvdf       /mnt/app   ext4    defaults,nofail 0       2\" >> /etc/fstab\n", "# mount the volume on current boot\n", "mount -a\n"]]
+					}
+				}
+			},
+			"Type": "AWS::EC2::Instance"
+		},
+		"NewVolume": {
+			"Type": "AWS::EC2::Volume",
+			"Properties": {
+				"Size": "10",
+				"AvailabilityZone": {
+					"Fn::GetAtt": ["pubsubnet1", "AvailabilityZone"]
+				}
+			}
+		},
+		"DemoBucket": {
+			"Properties": {
+				"AccessControl": "Private"
+			},
+			"Type": "AWS::S3::Bucket"
+		}
+	},
+	"Outputs": {
+		"VpcId": {
+			"Description": "VPC Id",
+			"Value": {
+				"Ref": "DemoVPC"
+			}
+		},
+		"SecurityGroup": {
+			"Description": "Security Group Id",
+			"Value": {
+				"Ref": "vpcSecurityGroup"
+			}
+		},
+		"InstanceId": {
+			"Description": "Instance Id",
+			"Value": {
+				"Ref": "DemoInstance"
+			}
+		},
+		"BucketName": {
+			"Description": "S3 bucket",
+			"Value": {
+				"Ref": "DemoBucket"
+			}
+		}
+	}
+}
